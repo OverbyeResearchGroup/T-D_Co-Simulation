@@ -145,7 +145,7 @@ def add_transmission_EV_with_hold(mw, ev_mw_all, ev_mvar, hour):
     return mw, ev_mw_all
 
 
-def update_power(pw, P, Q, subID, opf_file, EV_loads, hour, T_EV, multipliers_t, hold):
+def update_power(pw, P, subID, opf_file, EV_loads, hour, T_EV, multipliers_t, hold):
     # pw.SolvePowerFlow()
     print("EV from Dist Length")
     print(len(P), len(subID))
@@ -156,7 +156,7 @@ def update_power(pw, P, Q, subID, opf_file, EV_loads, hour, T_EV, multipliers_t,
     print("EV sum from Dist")
     print(sum(P))
     # pw.RunScriptCommand(f'SolvePrimalLP("{opf_file}")')
-    load_data = pw.GetParametersMultipleElement('load', ['SubNum', 'BusNum', 'LoadID', 'LoadMW', 'LoadMVR', 'BusPUVolt',
+    load_data = pw.GetParametersMultipleElement('load', ['SubNum', 'BusNum', 'LoadID', 'LoadMW', 'LoadMVR', 'BusPUVolt', "BusNomVolt",
                                                          'Latitude:1', 'Longitude:1'])
     # print("Load data original")
     # print(load_data["LoadMW"])
@@ -169,75 +169,17 @@ def update_power(pw, P, Q, subID, opf_file, EV_loads, hour, T_EV, multipliers_t,
     # print("size of kv69", len(kV69subs))
     # print("subID length is", len(subID))
     # print("P length is", len(P))
+    load_data = load_data.sort_values(by='BusNomVolt')
     ld = load_data.copy()
-
-    '''
-    for i in range(len(subID)):
-
-        #print("PW Loads")
-        #print(load_data.loc[load_data['SubNum'] == subID[i], 'LoadMW'])
-        #TkV69subs[load_data['SubNum'] == subID[i]]=load_data.loc[load_data['SubNum'] == subID[i], 'LoadMW']
-        TkV69subs.append(load_data.loc[load_data['SubNum'] == subID[i], 'LoadMW'])
-        idx=load_data.index[load_data["SubNum"]==subID[i]].tolist()
-        #print("count", i)
-        #print("power", P[i])
-        #print(type(idx))
-
-        if len(idx)>1:
-            for j in idx:
-                #ld.loc[j, 'LoadMW'] = P[i]/len(idx) + load_data.loc[j, 'LoadMW']
-                #print("load loc")
-                #print(load_data.loc[j]["LoadMW"])
-                ld.loc[j, 'LoadMVR'] = Q[i]#/len(idx) #+ load_data.loc[j, 'LoadMVR']
-        elif idx:
-            print("Original", ld.loc[idx[0], "LoadMW"])
-            #print("idx", idx[0])
-            #print("load loc2")
-            #print(load_data.loc[idx[0]]["LoadMW"])
-            #ld.loc[idx[0], 'LoadMW']= P[i]  + load_data.loc[idx[0], 'LoadMW']
-            ld.loc[idx[0], 'LoadMVR'] = Q[i]  #+ load_data.loc[idx[0], 'LoadMW']
-            print("After", ld.loc[idx[0], "LoadMW"])
-
-
-        #load_data.loc[load_data['SubNum'] == subID[i], 'LoadMVR'] = Q[i]
-        DkV69subs.append(load_data.loc[load_data['SubNum'] == subID[i], 'LoadMW'])
-        #print("values",P[i], Q[i])
-        #DkV69subs[load_data['SubNum'] == subID[i]]=load_data.loc[load_data['SubNum'] == subID[i], 'LoadMW']
-    print("New Load")
-    print(ld["LoadMW"])
-    #load_data=load_data.fillna(0)
-    ld2=ev_loads_d(EV_loads, hour, ld, opf_file, subID)
-    ld2.to_csv(opf_file)
-    #print("IS NULL",load_data.isnull().values.any())
-    #load_data.to_csv(PARENT_DIRECTORY + "\\Load_data.csv")
-    #ld.to_csv(opf_file)
-    pw.change_and_confirm_params_multiple_element(ObjectType='load', command_df=ld2)
-    pw.SolvePowerFlow()
-    DkV69subs=pd.Series(DkV69subs)
-    TkV69subs=pd.Series(TkV69subs)
-    '''
 
     for k, p in zip(subID, P):
         # print("Iterator:", k)
         # print(len(subID))
         idx = load_data.index[load_data["SubNum"] == k].tolist()
+        #idx = load_data.index[(load_data["SubNum"] == k) & (load_data['LoadID'] == 'EV')]
         # print("IDX")
         # print(idx)
-        if len(idx) > 1:
-
-            # check_loads=load_data[load_data["SubNum"] == k]
-            # check_loads=check_loads["LoadMW"].tolist()
-            # id_p=check_loads.index(max(check_loads))
-            # print(check_loads)
-            # print("id_p:", id_p)
-            # id=idx[id_p]
-            # ld.loc[id, 'LoadMW'] = p + load_data.loc[idx[0], 'LoadMW']
-
-            for j in idx:
-                ld.loc[j, 'LoadMW'] = p / len(idx) + ld.loc[j, 'LoadMW']
-                # print(ld.loc[j]['LoadMW'] )
-
-        elif idx:
+        if idx:
             ld.loc[idx[0], 'LoadMW'] = p + ld.loc[idx[0], 'LoadMW']
             # print(ld.loc[idx[0]]['LoadMW'])
         else:
@@ -273,16 +215,16 @@ def update_power(pw, P, Q, subID, opf_file, EV_loads, hour, T_EV, multipliers_t,
             print("SubID:", k)
         '''
     # print("EV Total:", ev_total)
-    ld2, new_hold = ev_loads_d(EV_loads, hour, ld, opf_file, T_EV, multipliers_t, hold)
+    #ld2, new_hold = ev_loads_d(EV_loads, hour, ld, opf_file, T_EV, multipliers_t, hold)
     # ld2.to_csv(opf_file)
     # print("IS NULL",load_data.isnull().values.any())
     # load_data.to_csv(PARENT_DIRECTORY + "\\Load_data.csv")
-    ld2.to_csv(opf_file)
-    pw.change_and_confirm_params_multiple_element(ObjectType='load', command_df=ld2)
+    ld.to_csv(opf_file)
+    pw.change_and_confirm_params_multiple_element(ObjectType='load', command_df=ld)
     pw.SolvePowerFlow()
     # load_data = pw.GetParametersMultipleElement('load', ['SubNum', 'BusNum', 'LoadID', 'LoadMW', 'LoadMVR', 'BusPUVolt', 'Latitude:1', 'Longitude:1'])
     # load_data.to_csv(opf_file)
-    return new_hold
+    return 
 
 
 def csv_reader(master_csv):

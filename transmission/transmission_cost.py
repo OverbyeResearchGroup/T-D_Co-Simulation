@@ -95,7 +95,7 @@ if __name__ == "__main__":
         #BusKV=[1,2,3,4,5]
         advance=advance+1
         #federate.advance(advance)
-        BusKV=[advance, advance]
+        #BusKV=[advance, advance]
 
         #hour=hour+1
         if hour==1:
@@ -146,12 +146,14 @@ if __name__ == "__main__":
         if "," in distribution_data_string:
             distribution_data = ast.literal_eval(distribution_data_string)
 
+        print(distribution_data)
+
         if not os.path.exists(opf_path):
             os.makedirs(opf_path)
         opf_file=opf_path + f"\\opf_load_data_X{hour}.csv"
         #pw.RunScriptCommand(f'SolvePrimalLP("{opf_file}")')
 
-        #Tkv69, Dkv69=update_power(pw,P,Q, subID, opf_file)
+        update_power(pw,P, IDs, opf_file)
         load_data = pw.GetParametersMultipleElement('load', ['BusNum', 'LoadID', 'LoadMW', 'LoadMVR'])
         PWMW = load_data['LoadMW']
         pw.RunScriptCommand(f'LogSave("{PARENT_DIRECTORY}\\Co-Simulation-Results\\{date}\\{percent}\\Weather_data_added\\log{hour}.txt")')
