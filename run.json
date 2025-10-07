@@ -1,0 +1,19 @@
+{
+    "broker": true,
+    "federates": [
+	    {
+            "directory": ".",
+            "exec": "python distribution_system/main.py --loglevel=7",
+            "host": "localhost",
+            "name": "distribution_system"
+        },
+	    {
+            "directory": ".",
+            "exec": "python transmission/transmission_cost.py --loglevel=7",
+            "host": "localhost",
+            "name": "transmission_system"
+        }
+   
+    ],
+    "name": "Helics-PowerWorld-Interface"
+}
