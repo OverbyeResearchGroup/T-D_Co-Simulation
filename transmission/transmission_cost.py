@@ -134,8 +134,7 @@ if __name__ == "__main__":
         federate.send(
                 f"distribution_system_voltage", BusKV, "vector"
             )
-        P=[]
-        Q=[]
+   
         federate.advance(advance)
 
         distribution_data_string = federate.recv(f"transmission_system_load")
@@ -146,7 +145,7 @@ if __name__ == "__main__":
         if "," in distribution_data_string:
             distribution_data = ast.literal_eval(distribution_data_string)
 
-        print(distribution_data)
+        P=distribution_data
 
         if not os.path.exists(opf_path):
             os.makedirs(opf_path)
