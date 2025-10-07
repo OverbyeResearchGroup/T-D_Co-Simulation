@@ -152,8 +152,17 @@ def get_load_Totals():
     return load_totals
 
 def update_load(nodes, load_df, hour):
-    for id, load in zip(load_df["Node ID"], load_df[ f"{hour}"]):
-        None 
+    list_loads=cympy.study.ListDevices(cympy.enums.DeviceType.SpotLoad) 
+    for nid, load in zip(load_df["Node ID"], load_df[ f"{hour}"]):
+        for load_object in list_loads:
+            if nid==load_object.DeviceNumber:
+                load_id= load_object.DeviceNumber
+                load_loc=load.Location
+                #NEED TO SAVE AFTER ADDING FOR IT TO TAKE EFFECT
+                #THIS WORKS cympy.study.AddDevice adds load12345
+                l1=cympy.study.AddDevice(f"Load_{load_id}", cympy.enums.DeviceType.SpotLoad, load_id, "DEFAULT", load_loc, True)
+                l1.SetValue(load, "DemandA")
+        return 
 
 
 def summary_for_network(output_file):
@@ -482,7 +491,7 @@ if __name__ == "__main__":
         #send_power= list(zip(id_list, kw_totals, kvar_totals))
         kw_totals = [int(item) for item in kw_totals]
         send_power=kw_totals#[0:4]
-        send_power=[advance, hour]
+        #send_power=[advance, hour]
         DIRECTORY = PARENT_DIRECTORY
         dss = os.path.join(DIRECTORY,
                            f"Co-Simulation-Results\\{date}\\{percent}{weather_file}\\Overloads_{system}\\X{hour}")
