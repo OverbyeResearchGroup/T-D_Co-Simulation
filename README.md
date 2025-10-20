@@ -10,7 +10,7 @@ After creating and activating the cympyEnv, the steps below can be used to impor
 2. Place “cympy.pth” in the “site-packages” folder of the cympyEnv environment (e.g., “C:\Users\...\Anaconda3\envs\cympyEnv\Lib\site-packages”)
 3. Include “import cympy” at the top of any Python script for which the package will be used.
 
-### Running the  Co-Simulation
+# Running the  Co-Simulation
 
 - **Change any file reference to reflect their locations on your system (all folders not provided here should be placed in the main Co-Simulation Folder**
 - **Change the directory in the Anaconda Prompt to the project location**
