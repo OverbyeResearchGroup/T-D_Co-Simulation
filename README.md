@@ -6,7 +6,7 @@ Example with Anaconda Python: conda env create --name cympyEnv --file=c:\path\to
 Once the cympyEnv has been created, it must be activated before running any of the custom scripts.
 # Importing the CymPy Package
 After creating and activating the cympyEnv, the steps below can be used to import the CymPy package:
-1. Create a text file called “cympy.pth” that contains the path to the parent folder where the CymPy library is located (e.g., “C:\Program Files\CYME\CYME_9_4_rev01”). An example is provided in the zip folder, but the path must be updated accordingly.
+1. Create a text file called “cympy.pth” that contains the path to the parent folder where the CymPy library is located (e.g., “C:\Program Files\CYME\CYME_9_4_rev01”). An example is provided.
 2. Place “cympy.pth” in the “site-packages” folder of the cympyEnv environment (e.g., “C:\Users\...\Anaconda3\envs\cympyEnv\Lib\site-packages”)
 3. Include “import cympy” at the top of any Python script for which the package will be used.
 
