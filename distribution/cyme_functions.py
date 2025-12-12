@@ -613,8 +613,8 @@ def report_bus_flow(output_file):
 
     
     '''
-    report = cympy.rm.CustomReport('SummaryReport', ['Network', 'Worst Overload A', 'Worst Overload B', 'Worst Overload C',
-                                                     'Worst Overload N', 'Number of Overloads A', 'Number of Overloads B',
+    report = cympy.rm.CustomReport('SummaryReport', ['Network', 'Worst Overload A (%)', 'Worst Overload B (%)', 'Worst Overload C (%)',
+                                                     'Worst Overload N (%)', 'Number of Overloads A', 'Number of Overloads B',
                                                      'Number of Overloads C', 'Number of Overloads N'])
    '''
     
