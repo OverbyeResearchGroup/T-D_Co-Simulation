@@ -512,17 +512,144 @@ def get_node_object(node_find):
             else:
                 return None
 
-def get_load_Totals():
-    load_totals=pd.DataFrame(columns=["Device ID", "kW Total", "kvar Total"])
-    
-    nodes =cympy.study.ListDevices(cympy.enums.DeviceType.SpotLoad) 
-    for node in nodes:
-        id_num=node.DeviceNumber
-        load_kw_total=cympy.study.QueryInfoDevice("TotalKW", id_num, cympy.enums.DeviceType.SpotLoad) #total KW            
-        load_kvar_total=cympy.study.QueryInfoDevice("TotalKVAR", id_num, cympy.enums.DeviceType.SpotLoad) #total KW            
-        load_totals = pd.concat([pd.DataFrame([[id_num, load_kw_total, load_kvar_total]], columns=load_totals.columns), load_totals], ignore_index=True)            
-        print(load_kw_total)
+def get_node_load_Totals():
+    load_totals=pd.DataFrame(columns=["Node ID", "kW Total", "kvar Total"])
+    networks = cympy.study.ListNetworks()
+    for network in networks:
+        nodes = cympy.study.ListNodes(cympy.enums.NodeType.Node, network)
+        for node in nodes:
+            load_kw_total=cympy.study.QueryInfoDevice("TotalKW", node.ID, cympy.enums.DeviceType.SpotLoad) #total KW            
+            load_kvar_total=cympy.study.QueryInfoDevice("TotalKVAR", node.ID, cympy.enums.DeviceType.SpotLoad) #total KW            
+            load_totals = pd.concat([pd.DataFrame([[node.ID, load_kw_total, load_kvar_total]], columns=load_totals.columns), load_totals], ignore_index=True)            
+            print(load_kw_total)
     return load_totals
+
+def report_bus_flow(output_file):
+    '''
+    DwOverloadCondWorstA
+    DwOverloadCondWorstB
+    DwOverloadCondWorstC
+    DwOverloadCondWorstN
+    DwOverloadCount
+    DwOverloadCountA
+    DwOverloadCountB
+    DwOverloadCountC
+    DwOverloadCountN
+    '''
+    locale.setlocale(locale.LC_NUMERIC, '')
+    
+    # Deactivate the GUI refresh
+    cympy.app.ActivateRefresh(False)
+    
+    # Run the Load Flow analysis
+    load_flow = cympy.sim.LoadFlow()
+    load_flow.Run()
+    
+    # Get the list of networks
+    networks = cympy.study.ListNetworks()
+    print(networks)
+    # Create an empty list for the lines to show in the report
+    lines = []
+    
+    summary_report=pd.DataFrame(columns=['Network', 'Worst Overload A', 'Worst Overload B', 'Worst Overload C',
+                                                     'Worst Overload N', 'Number of Overloads A', 'Number of Overloads B',
+                                                     'Number of Overloads C', 'Number of Overloads N'])
+    # Iterating through all networks
+    for network in networks:
+        # Create empty lists for the worst low voltage, high voltage and total losses seen by the sources
+        OverloadsA = []
+        OverloadsB = []
+        OverloadsC = []
+        OverloadsN=[]
+        overload_countA=0
+        overload_countB=0
+        overload_countC=0
+        overload_countN=0
+        sources = cympy.study.ListNodes(cympy.enums.NodeType.SourceNode, network)
+        for source in sources:
+            # Getting source node id
+            source_id = source.ID        
+            try:
+                # Keywords are in the string format and must be converted to float for numerical values
+                OverloadsA.append(locale.atof(cympy.study.QueryInfoNode('DwOverloadCondWorstA', source_id)))
+                OverloadsB.append(locale.atof(cympy.study.QueryInfoNode('DwOverloadCondWorstB', source_id)))
+                OverloadsC.append(locale.atof(cympy.study.QueryInfoNode('DwOverloadCondWorstC', source_id)))
+                OverloadsN.append(locale.atof(cympy.study.QueryInfoNode('DwOverloadCondWorstN', source_id)))
+                overload_countA =int(overload_countA + locale.atof(cympy.study.QueryInfoNode('DwOverloadCountA', source_id)))
+                overload_countB =int(overload_countB + locale.atof(cympy.study.QueryInfoNode('DwOverloadCountB', source_id)))
+                overload_countC = int(overload_countC + locale.atof(cympy.study.QueryInfoNode('DwOverloadCountC', source_id)))
+                overload_countN = int(overload_countN + locale.atof(cympy.study.QueryInfoNode('DwOverloadCountN', source_id)))
+            except ValueError as e:
+                pass  # Ignore source if no valid value if found
+    
+        try:
+            # Get the worst case
+            worst_A = min(OverloadsA)
+            worst_B = max(OverloadsB)
+            worst_C = max(OverloadsC)
+            worst_N = max(OverloadsN)
+    
+        # Catch a thrown exception
+        except cympy.err.CymError as e:
+            print(e.GetMessage())
+            worst_A = 0.0
+            worst_B = 0.0
+            worst_C = 0.0
+            worst_N = 0.0
+            overload_countA=0
+            overload_countB=0
+            overload_countC=0
+            overload_countN=0
+    
+        # Appending data to lines
+        
+        df = pd.DataFrame([[network, worst_A, worst_B, worst_C,worst_N, overload_countA, overload_countB, overload_countC, overload_countN]], 
+                          columns=['Network', 'Worst Overload A', 'Worst Overload B', 'Worst Overload C',
+                                                                           'Worst Overload N', 'Number of Overloads A', 'Number of Overloads B',
+                                                                           'Number of Overloads C', 'Number of Overloads N'])
+        summary_report = pd.concat([summary_report, df])
+        #lines.append([network, worst_A, worst_B, worst_C, overload_countA, overload_countB, overload_countC])
+    
+
+    
+    '''
+    report = cympy.rm.CustomReport('SummaryReport', ['Network', 'Worst Overload A', 'Worst Overload B', 'Worst Overload C',
+                                                     'Worst Overload N', 'Number of Overloads A', 'Number of Overloads B',
+                                                     'Number of Overloads C', 'Number of Overloads N'])
+   '''
+    
+    summary_report.to_csv(output_file, index=False)
+    '''
+    for line in lines:
+        print("line: ", line)
+        # Create a list with the elements of the report line
+        cells = []
+        # Creating a hyperlink network cell
+        c_network = cympy.rm.NetworkCell(line[0])
+        cells.append(c_network)
+    
+        # Adding the other values to the report
+        c_others = line[1:3]
+        for cell in c_others:
+            cells.append(cympy.rm.FloatCell(round(cell, 2)))
+        
+        c_others = line[3:5]
+        for cell in c_others:
+            cells.append(cympy.rm.IntCell(cell))
+    
+        c_others = line[5:]
+        for cell in c_others:
+            cells.append(cympy.rm.FloatCell(round(cell, 2)))
+        
+        # Adding the row to the report
+        report.AddRow(cells)
+    
+    try:
+        report.Save(cympy.enums.ReportModeType.CSV, output_file)
+    except:
+        None
+    '''
+    return
 
 if __name__ == "__main__":
     database_name="Bluebonnet_July24th_wtoSubstation_testing"
@@ -536,7 +663,10 @@ if __name__ == "__main__":
 
     open_study_file(studyFilePath)
     #list_loads()
-    kw = get_load_Totals()
+    output_file=studyFolderPath + "\\test_overload_summary.csv"
+
+    report_bus_flow(output_file)
+    #kw = get_node_load_Totals()
     #output_file=studyFolderPath + "\\test_summary.csv"
     #summary_for_network(output_file)
     #total=get_node_kW_Totals()
