@@ -351,7 +351,7 @@ def summary_for_network(output_file):
         cympy.app.ActivateRefresh(True)
     return
 
-def report_bus_flow(output_file):
+def report_overloads_by_network(output_file):
     '''
     DwOverloadCondWorstA
     DwOverloadCondWorstB
@@ -443,6 +443,114 @@ def report_bus_flow(output_file):
     
     return
    
+def report_overloads_by_network_and_source(network_file, feeder_file):
+    '''
+    DwOverloadCondWorstA
+    DwOverloadCondWorstB
+    DwOverloadCondWorstC
+    DwOverloadCondWorstN
+    DwOverloadCount
+    DwOverloadCountA
+    DwOverloadCountB
+    DwOverloadCountC
+    DwOverloadCountN
+    '''
+    locale.setlocale(locale.LC_NUMERIC, '')
+    
+    # Deactivate the GUI refresh
+    cympy.app.ActivateRefresh(False)
+    
+    # Run the Load Flow analysis
+    load_flow = cympy.sim.LoadFlow()
+    load_flow.Run()
+    
+    # Get the list of networks
+    networks = cympy.study.ListNetworks()
+    #print(networks)
+    # Create an empty list for the lines to show in the report
+    lines = []
+    
+    summary_report=pd.DataFrame(columns=['Network', 'Worst Overload A', 'Worst Overload B', 'Worst Overload C',
+                                                     'Worst Overload N', 'Number of Overloads A', 'Number of Overloads B',
+                                                     'Number of Overloads C', 'Number of Overloads N'])
+    
+    summary_report_full=pd.DataFrame(columns=['Network', 'SourceNode','Worst Overload A', 'Worst Overload B', 'Worst Overload C',
+                                                     'Worst Overload N', 'Number of Overloads A', 'Number of Overloads B',
+                                                     'Number of Overloads C', 'Number of Overloads N'])
+    #all_overloads_report=pd.DataFrame(columns=['Network',"Node", "Overload A", " Overload B",  "Overload C", "Overload N"])
+    # Iterating through all networks
+    for network in networks:
+        # Create empty lists for the worst low voltage, high voltage and total losses seen by the sources
+        OverloadsA = []
+        OverloadsB = []
+        OverloadsC = []
+        OverloadsN=[]
+        overload_countA=0
+        overload_countB=0
+        overload_countC=0
+        overload_countN=0
+        sources = cympy.study.ListNodes(cympy.enums.NodeType.SourceNode, network)
+        for source in sources:
+            # Getting source node id
+            source_id = source.ID        
+            try:
+                # Keywords are in the string format and must be converted to float for numerical values
+                worst_A = locale.atof(cympy.study.QueryInfoNode('DwOverloadCondWorstA', source_id))
+                worst_B = locale.atof(cympy.study.QueryInfoNode('DwOverloadCondWorstB', source_id))
+                worst_C = locale.atof(cympy.study.QueryInfoNode('DwOverloadCondWorstC', source_id))
+                worst_N = locale.atof(cympy.study.QueryInfoNode('DwOverloadCondWorstN', source_id))
+                OverloadsA.append(worst_A)
+                OverloadsB.append(worst_B)
+                OverloadsC.append(worst_C)
+                OverloadsN.append(worst_N)
+                overload_countA =int(overload_countA + locale.atof(cympy.study.QueryInfoNode('DwOverloadCountA', source_id)))
+                overload_countB =int(overload_countB + locale.atof(cympy.study.QueryInfoNode('DwOverloadCountB', source_id)))
+                overload_countC = int(overload_countC + locale.atof(cympy.study.QueryInfoNode('DwOverloadCountC', source_id)))
+                overload_countN = int(overload_countN + locale.atof(cympy.study.QueryInfoNode('DwOverloadCountN', source_id)))
+                
+                df_full = pd.DataFrame([[network, source_id, worst_A, worst_B, worst_C,worst_N, locale.atof(cympy.study.QueryInfoNode('DwOverloadCountA', source_id)), 
+                                         locale.atof(cympy.study.QueryInfoNode('DwOverloadCountB', source_id)), locale.atof(cympy.study.QueryInfoNode('DwOverloadCountC', source_id)), 
+                                         locale.atof(cympy.study.QueryInfoNode('DwOverloadCountN', source_id))]], 
+                                  columns=['Network', 'SourceNode','Worst Overload A', 'Worst Overload B', 'Worst Overload C',
+                                                                                   'Worst Overload N', 'Number of Overloads A', 'Number of Overloads B',
+                                                                                   'Number of Overloads C', 'Number of Overloads N'])
+                summary_report_full = pd.concat([summary_report_full, df_full])
+        
+            except ValueError as e:
+                pass  # Ignore source if no valid value if found
+    
+        try:
+            # Get the worst case
+            worst_A = min(OverloadsA)
+            worst_B = max(OverloadsB)
+            worst_C = max(OverloadsC)
+            worst_N = max(OverloadsN)
+    
+        # Catch a thrown exception
+        except cympy.err.CymError as e:
+            print(e.GetMessage())
+            worst_A = 0.0
+            worst_B = 0.0
+            worst_C = 0.0
+            worst_N = 0.0
+            overload_countA=0
+            overload_countB=0
+            overload_countC=0
+            overload_countN=0
+            
+            
+        # Appending data to lines
+        
+        df = pd.DataFrame([[network, worst_A, worst_B, worst_C,worst_N, overload_countA, overload_countB, overload_countC, overload_countN]], 
+                          columns=['Network', 'Worst Overload A', 'Worst Overload B', 'Worst Overload C',
+                                                                           'Worst Overload N', 'Number of Overloads A', 'Number of Overloads B',
+                                                                           'Number of Overloads C', 'Number of Overloads N'])
+        summary_report = pd.concat([summary_report, df])
+        #lines.append([network, worst_A, worst_B, worst_C, overload_countA, overload_countB, overload_countC])
+    
+    summary_report.to_csv(network_file, index=False)
+    summary_report_full.to_csv(feeder_file, index=False)
+    
 
 if __name__ == "__main__":
     load_data=pd.read_csv(CURRENT_DIRECTORY + "\\load_data_dummy_data.csv")
@@ -662,8 +770,9 @@ if __name__ == "__main__":
         if not overload_folder:
             os.makedirs(overload_folder)
             
-        soverload_file=overload_folder + f"overload_summary_X{hour}.csv"
-        report_bus_flow(soverload_file)
+        overload_file_network=overload_folder + f"overload_summary_by_network_X{hour}.csv"
+        overload_file_source=overload_folder + f"overload_summary_by_source_X{hour}.csv"
+        report_overloads_by_network_and_source(overload_file_network,overload_file_source)
         
    
     index_counter=index_counter+1
