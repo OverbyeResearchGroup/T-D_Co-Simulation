@@ -551,7 +551,7 @@ def report_overloads_by_network_and_source(network_file, feeder_file):
     summary_report.to_csv(network_file, index=False)
     summary_report_full.to_csv(feeder_file, index=False)
 
-def report_all_overloads(output_file_path):
+def report_all_overloads_and_line_loadings(overload_file_path, line_loading_file_path):
     '''
     DwOverloadCondWorstA
     DwOverloadCondWorstB
@@ -579,7 +579,7 @@ def report_all_overloads(output_file_path):
     lines = []
     
    
-    summary_report_full=pd.DataFrame(columns=['Network', 'Overhead Line','Overload % A', 'Overload % B', 'Overload % C',
+    line_loading=pd.DataFrame(columns=['Network', 'Overhead Line','Overload % A', 'Overload % B', 'Overload % C',
                                                      'Overload % N'])
     #all_overloads_report=pd.DataFrame(columns=['Network',"Node", "Overload A", " Overload B",  "Overload C", "Overload N"])
     # Iterating through all networks
@@ -603,7 +603,7 @@ def report_all_overloads(output_file_path):
                 df = pd.DataFrame([[network, source_id, overloadampsA, overloadampsB, overloadampsC,overloadampsN]], 
                                   columns=['Network', 'Overhead Line', 'Overload % A', 'Overload % B', 'Overload % C',
                                                                                    'Overload % N'])
-                summary_report_full = pd.concat([summary_report_full, df])
+                line_loading = pd.concat([line_loading, df])
                 
             except ValueError as e:
                 pass  # Ignore source if no valid value if found
@@ -613,9 +613,12 @@ def report_all_overloads(output_file_path):
       
       
         #lines.append([network, worst_A, worst_B, worst_C, overload_countA, overload_countB, overload_countC])
-    summary_report_full = summary_report_full.set_index(['Network', 'Overhead Line']) 
-    summary_report_full = summary_report_full[(summary_report_full > 0).any(axis=1)]
-    summary_report_full.to_csv(output_file_path)
+    line_loading = line_loading.set_index(['Network', 'Overhead Line']) 
+    all_overloads = line_loading[(line_loading > 0).any(axis=1)]
+    all_overloads.to_csv(overload_file_path)
+    line_loading=line_loading+100
+    line_loading.to_csv(line_loading_file_path)
+
     
     return
 
@@ -832,7 +835,7 @@ if __name__ == "__main__":
         summary_folder= PARENT_DIRECTORY + f"\\Co-Simulation-Results\\{date}\\Summary\\"
         if not summary_folder:
             os.makedirs(summary_folder)
-        '''   
+            
         summary_file=summary_folder + f"summary_X{hour}.csv"
         summary_for_network(summary_file)
         
@@ -840,17 +843,22 @@ if __name__ == "__main__":
         overload_summary_folder= PARENT_DIRECTORY + f"\\Co-Simulation-Results\\{date}\\Overload Summary\\"
         if not overload_summary_folder:
             os.makedirs(overload_summary_folder)
-        '''
+        
         all_overloads_folder= PARENT_DIRECTORY + f"\\Co-Simulation-Results\\{date}\\Overloads\\"
         if not all_overloads_folder:
             os.makedirs(all_overloads_folder)
+            
+        all_line_loadings_folder= PARENT_DIRECTORY + f"\\Co-Simulation-Results\\{date}\\Line Loading\\"
+        if not all_line_loadings_folder:
+            os.makedirs(all_line_loadings_folder)
             
         overload_file_network=overload_summary_folder + f"overload_summary_by_network_X{hour}.csv"
         overload_file_source=overload_summary_folder + f"overload_summary_by_source_X{hour}.csv"
         report_overloads_by_network_and_source(overload_file_network,overload_file_source)
         
         all_overloads_file = all_overloads_folder+f"all_overloads_X{hour}.csv"
-        report_all_overloads(all_overloads_file)
+        all_line_loading_file = all_overloads_folder+f"line_loading_X{hour}.csv"
+        report_all_overloads_and_line_loadings(all_overloads_file, )
    
     index_counter=index_counter+1
     #time.sleep(470)
