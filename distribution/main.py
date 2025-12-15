@@ -613,8 +613,13 @@ def report_all_overloads(output_file_path):
       
       
         #lines.append([network, worst_A, worst_B, worst_C, overload_countA, overload_countB, overload_countC])
-    summary_report_full = summary_report_full[~(summary_report_full < 0).any(axis=1)]
-    summary_report_full.to_csv(output_file_path, index=False)
+    summary_report_full = summary_report_full.set_index(['Network', 'Overhead Line']) 
+    summary_report_full = summary_report_full[(summary_report_full > 0).any(axis=1)]
+    summary_report_full.to_csv(output_file_path)
+    
+    return
+
+
     
     return    
 
@@ -844,8 +849,8 @@ if __name__ == "__main__":
         overload_file_source=overload_summary_folder + f"overload_summary_by_source_X{hour}.csv"
         report_overloads_by_network_and_source(overload_file_network,overload_file_source)
         
-        all_overloads_file = all_overloads_folder+f"all_overloads_X{hour}"
-        report_all_overloads()
+        all_overloads_file = all_overloads_folder+f"all_overloads_X{hour}.csv"
+        report_all_overloads(all_overloads_file)
    
     index_counter=index_counter+1
     #time.sleep(470)

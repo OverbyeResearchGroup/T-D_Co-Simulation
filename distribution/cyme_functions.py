@@ -698,8 +698,9 @@ def report_all_overloads(output_file_path):
       
       
         #lines.append([network, worst_A, worst_B, worst_C, overload_countA, overload_countB, overload_countC])
-    summary_report_full = summary_report_full[~(summary_report_full < 0).any(axis=1)]
-    summary_report_full.to_csv(output_file_path, index=False)
+    summary_report_full = summary_report_full.set_index(['Network', 'Overhead Line']) 
+    #summary_report_full = summary_report_full[(summary_report_full > 0).any(axis=1)]
+    summary_report_full.to_csv(output_file_path)
     
     return
 
