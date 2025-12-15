@@ -580,6 +580,8 @@ def report_overloads_by_network(network_file, feeder_file):
                 worst_B = locale.atof(cympy.study.QueryInfoNode('DwOverloadCondWorstB', source_id))
                 worst_C = locale.atof(cympy.study.QueryInfoNode('DwOverloadCondWorstC', source_id))
                 worst_N = locale.atof(cympy.study.QueryInfoNode('DwOverloadCondWorstN', source_id))
+                
+
                 OverloadsA.append(worst_A)
                 OverloadsB.append(worst_B)
                 OverloadsC.append(worst_C)
@@ -634,6 +636,73 @@ def report_overloads_by_network(network_file, feeder_file):
     
     return
 
+def report_all_overloads(output_file_path):
+    '''
+    DwOverloadCondWorstA
+    DwOverloadCondWorstB
+    DwOverloadCondWorstC
+    DwOverloadCondWorstN
+    DwOverloadCount
+    DwOverloadCountA
+    DwOverloadCountB
+    DwOverloadCountC
+    DwOverloadCountN
+    '''
+    locale.setlocale(locale.LC_NUMERIC, '')
+    
+    # Deactivate the GUI refresh
+    cympy.app.ActivateRefresh(False)
+    
+    # Run the Load Flow analysis
+    load_flow = cympy.sim.LoadFlow()
+    load_flow.Run()
+    
+    # Get the list of networks
+    networks = cympy.study.ListNetworks()
+    #print(networks)
+    # Create an empty list for the lines to show in the report
+    lines = []
+    
+   
+    summary_report_full=pd.DataFrame(columns=['Network', 'Overhead Line','Overload % A', 'Overload % B', 'Overload % C',
+                                                     'Overload % N'])
+    #all_overloads_report=pd.DataFrame(columns=['Network',"Node", "Overload A", " Overload B",  "Overload C", "Overload N"])
+    # Iterating through all networks
+    for network in networks:
+        # Create empty lists for the worst low voltage, high voltage and total losses seen by the sources
+        
+        #sources = cympy.study.ListDevices(cympy.enums.DeviceType.OverheadLineUnbalanced)
+        sources = cympy.study.ListDevices(cympy.enums.DeviceType.OverheadByPhase)
+        for source in sources:
+            # Getting source node id
+            #print(source.DeviceType)
+            try:
+                # Keywords are in the string format and must be converted to float for numerical values
+                source_id = source.DeviceNumber        
+                overloadampsA = locale.atof(cympy.study.QueryInfoDevice('OverloadAmpsA', source_id, source.DeviceType))
+                overloadampsB = locale.atof(cympy.study.QueryInfoDevice('OverloadAmpsB', source_id, source.DeviceType))
+                overloadampsC = locale.atof(cympy.study.QueryInfoDevice('OverloadAmpsC', source_id, source.DeviceType))
+                overloadampsN = locale.atof(cympy.study.QueryInfoDevice('OverloadAmpsN', source_id, source.DeviceType))
+                #print(source_id, source.DeviceType)
+                
+                df = pd.DataFrame([[network, source_id, overloadampsA, overloadampsB, overloadampsC,overloadampsN]], 
+                                  columns=['Network', 'Overhead Line', 'Overload % A', 'Overload % B', 'Overload % C',
+                                                                                   'Overload % N'])
+                summary_report_full = pd.concat([summary_report_full, df])
+                
+            except ValueError as e:
+                pass  # Ignore source if no valid value if found
+    
+
+    
+      
+      
+        #lines.append([network, worst_A, worst_B, worst_C, overload_countA, overload_countB, overload_countC])
+    summary_report_full = summary_report_full[~(summary_report_full < 0).any(axis=1)]
+    summary_report_full.to_csv(output_file_path, index=False)
+    
+    return
+
 if __name__ == "__main__":
     database_name="Bluebonnet_July24th_wtoSubstation_testing"
     studyFolderPath = CURRENT_DIRECTORY
@@ -648,8 +717,10 @@ if __name__ == "__main__":
     #list_loads()
     output_file=studyFolderPath + "\\test_overload_summary.csv"
     output_file2=studyFolderPath + "\\test_overload_summary_full.csv"
+    output_file_all=studyFolderPath + "\\test_overloads_all.csv"
 
-    report_overloads_by_network(output_file, output_file2)
+    #report_overloads_by_network(output_file, output_file2)
+    report_all_overloads(output_file_all)
     #kw = get_node_load_Totals()
     #output_file=studyFolderPath + "\\test_summary.csv"
     #summary_for_network(output_file)

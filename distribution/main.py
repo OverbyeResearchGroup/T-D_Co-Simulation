@@ -550,7 +550,73 @@ def report_overloads_by_network_and_source(network_file, feeder_file):
     
     summary_report.to_csv(network_file, index=False)
     summary_report_full.to_csv(feeder_file, index=False)
+
+def report_all_overloads(output_file_path):
+    '''
+    DwOverloadCondWorstA
+    DwOverloadCondWorstB
+    DwOverloadCondWorstC
+    DwOverloadCondWorstN
+    DwOverloadCount
+    DwOverloadCountA
+    DwOverloadCountB
+    DwOverloadCountC
+    DwOverloadCountN
+    '''
+    locale.setlocale(locale.LC_NUMERIC, '')
     
+    # Deactivate the GUI refresh
+    cympy.app.ActivateRefresh(False)
+    
+    # Run the Load Flow analysis
+    load_flow = cympy.sim.LoadFlow()
+    load_flow.Run()
+    
+    # Get the list of networks
+    networks = cympy.study.ListNetworks()
+    #print(networks)
+    # Create an empty list for the lines to show in the report
+    lines = []
+    
+   
+    summary_report_full=pd.DataFrame(columns=['Network', 'Overhead Line','Overload % A', 'Overload % B', 'Overload % C',
+                                                     'Overload % N'])
+    #all_overloads_report=pd.DataFrame(columns=['Network',"Node", "Overload A", " Overload B",  "Overload C", "Overload N"])
+    # Iterating through all networks
+    for network in networks:
+        # Create empty lists for the worst low voltage, high voltage and total losses seen by the sources
+        
+        #sources = cympy.study.ListDevices(cympy.enums.DeviceType.OverheadLineUnbalanced)
+        sources = cympy.study.ListDevices(cympy.enums.DeviceType.OverheadByPhase)
+        for source in sources:
+            # Getting source node id
+            #print(source.DeviceType)
+            try:
+                # Keywords are in the string format and must be converted to float for numerical values
+                source_id = source.DeviceNumber        
+                overloadampsA = locale.atof(cympy.study.QueryInfoDevice('OverloadAmpsA', source_id, source.DeviceType))
+                overloadampsB = locale.atof(cympy.study.QueryInfoDevice('OverloadAmpsB', source_id, source.DeviceType))
+                overloadampsC = locale.atof(cympy.study.QueryInfoDevice('OverloadAmpsC', source_id, source.DeviceType))
+                overloadampsN = locale.atof(cympy.study.QueryInfoDevice('OverloadAmpsN', source_id, source.DeviceType))
+                #print(source_id, source.DeviceType)
+                
+                df = pd.DataFrame([[network, source_id, overloadampsA, overloadampsB, overloadampsC,overloadampsN]], 
+                                  columns=['Network', 'Overhead Line', 'Overload % A', 'Overload % B', 'Overload % C',
+                                                                                   'Overload % N'])
+                summary_report_full = pd.concat([summary_report_full, df])
+                
+            except ValueError as e:
+                pass  # Ignore source if no valid value if found
+    
+
+    
+      
+      
+        #lines.append([network, worst_A, worst_B, worst_C, overload_countA, overload_countB, overload_countC])
+    summary_report_full = summary_report_full[~(summary_report_full < 0).any(axis=1)]
+    summary_report_full.to_csv(output_file_path, index=False)
+    
+    return    
 
 if __name__ == "__main__":
     load_data=pd.read_csv(CURRENT_DIRECTORY + "\\load_data_dummy_data.csv")
@@ -766,14 +832,20 @@ if __name__ == "__main__":
         summary_for_network(summary_file)
         
         
-        overload_folder= PARENT_DIRECTORY + f"\\Co-Simulation-Results\\{date}\\Overload Summary\\"
-        if not overload_folder:
-            os.makedirs(overload_folder)
+        overload_summary_folder= PARENT_DIRECTORY + f"\\Co-Simulation-Results\\{date}\\Overload Summary\\"
+        if not overload_summary_folder:
+            os.makedirs(overload_summary_folder)
+        
+        all_overloads_folder= PARENT_DIRECTORY + f"\\Co-Simulation-Results\\{date}\\Overloads\\"
+        if not all_overloads_folder:
+            os.makedirs(all_overloads_folder)
             
-        overload_file_network=overload_folder + f"overload_summary_by_network_X{hour}.csv"
-        overload_file_source=overload_folder + f"overload_summary_by_source_X{hour}.csv"
+        overload_file_network=overload_summary_folder + f"overload_summary_by_network_X{hour}.csv"
+        overload_file_source=overload_summary_folder + f"overload_summary_by_source_X{hour}.csv"
         report_overloads_by_network_and_source(overload_file_network,overload_file_source)
         
+        all_overloads_file = all_overloads_folder+f"all_overloads_X{hour}"
+        report_all_overloads()
    
     index_counter=index_counter+1
     #time.sleep(470)
