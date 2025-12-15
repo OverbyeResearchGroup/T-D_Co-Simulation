@@ -832,7 +832,7 @@ if __name__ == "__main__":
         summary_folder= PARENT_DIRECTORY + f"\\Co-Simulation-Results\\{date}\\Summary\\"
         if not summary_folder:
             os.makedirs(summary_folder)
-            
+        '''   
         summary_file=summary_folder + f"summary_X{hour}.csv"
         summary_for_network(summary_file)
         
@@ -840,7 +840,7 @@ if __name__ == "__main__":
         overload_summary_folder= PARENT_DIRECTORY + f"\\Co-Simulation-Results\\{date}\\Overload Summary\\"
         if not overload_summary_folder:
             os.makedirs(overload_summary_folder)
-        
+        '''
         all_overloads_folder= PARENT_DIRECTORY + f"\\Co-Simulation-Results\\{date}\\Overloads\\"
         if not all_overloads_folder:
             os.makedirs(all_overloads_folder)
