@@ -636,7 +636,7 @@ def report_overloads_by_network(network_file, feeder_file):
     
     return
 
-def report_all_overloads(output_file_path):
+def report_all_line_loadings(output_file_path):
     '''
     DwOverloadCondWorstA
     DwOverloadCondWorstB
@@ -664,8 +664,8 @@ def report_all_overloads(output_file_path):
     lines = []
     
    
-    summary_report_full=pd.DataFrame(columns=['Network', 'Overhead Line','Overload % A', 'Overload % B', 'Overload % C',
-                                                     'Overload % N'])
+    summary_report_full=pd.DataFrame(columns=['Network', 'Overhead Line','Line Loading % A', 'Line Loading % B', 'Line Loading % C',
+                                                     'Line Loading % N'])
     #all_overloads_report=pd.DataFrame(columns=['Network',"Node", "Overload A", " Overload B",  "Overload C", "Overload N"])
     # Iterating through all networks
     for network in networks:
@@ -686,8 +686,8 @@ def report_all_overloads(output_file_path):
                 #print(source_id, source.DeviceType)
                 
                 df = pd.DataFrame([[network, source_id, overloadampsA, overloadampsB, overloadampsC,overloadampsN]], 
-                                  columns=['Network', 'Overhead Line', 'Overload % A', 'Overload % B', 'Overload % C',
-                                                                                   'Overload % N'])
+                                  columns=['Network', 'Overhead Line', 'Line Loading % A', 'Line Loading % B', 'Line Loading % C',
+                                                                                   'Line Loading % N'])
                 summary_report_full = pd.concat([summary_report_full, df])
                 
             except ValueError as e:
@@ -699,6 +699,7 @@ def report_all_overloads(output_file_path):
       
         #lines.append([network, worst_A, worst_B, worst_C, overload_countA, overload_countB, overload_countC])
     summary_report_full = summary_report_full.set_index(['Network', 'Overhead Line']) 
+    summary_report_full=summary_report_full+100
     #summary_report_full = summary_report_full[(summary_report_full > 0).any(axis=1)]
     summary_report_full.to_csv(output_file_path)
     
@@ -718,10 +719,10 @@ if __name__ == "__main__":
     #list_loads()
     output_file=studyFolderPath + "\\test_overload_summary.csv"
     output_file2=studyFolderPath + "\\test_overload_summary_full.csv"
-    output_file_all=studyFolderPath + "\\test_overloads_all.csv"
+    output_file_all=studyFolderPath + "\\test_line_loading_all.csv"
 
     #report_overloads_by_network(output_file, output_file2)
-    report_all_overloads(output_file_all)
+    report_all_line_loadings(output_file_all)
     #kw = get_node_load_Totals()
     #output_file=studyFolderPath + "\\test_summary.csv"
     #summary_for_network(output_file)
