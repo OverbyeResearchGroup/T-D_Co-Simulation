@@ -622,6 +622,64 @@ def report_all_overloads_and_line_loadings(overload_file_path, line_loading_file
     
     return
 
+def report_all_voltages(output_file_path):
+    
+    locale.setlocale(locale.LC_NUMERIC, '')
+    
+    # Deactivate the GUI refresh
+    cympy.app.ActivateRefresh(False)
+    
+    # Run the Load Flow analysis
+    load_flow = cympy.sim.LoadFlow()
+    load_flow.Run()
+    
+    # Get the list of networks
+    networks = cympy.study.ListNetworks()
+    #print(networks)
+    # Create an empty list for the lines to show in the report
+    lines = []
+    
+   
+    summary_report_full=pd.DataFrame(columns=['Network', 'Device', 'Voltage (V)'])
+    #all_overloads_report=pd.DataFrame(columns=['Network',"Node", "Overload A", " Overload B",  "Overload C", "Overload N"])
+    # Iterating through all networks
+    for network in networks:
+        # Create empty lists for the worst low voltage, high voltage and total losses seen by the sources
+        
+        #sources = cympy.study.ListDevices(cympy.enums.DeviceType.OverheadLineUnbalanced)
+        sources = cympy.study.ListDevices()
+        #sources = cympy.study.ListNodes()
+        #sources = cympy.study.ListDevices(cympy.enums.DeviceType.SpotLoad)
+        for source in sources:
+            # Getting source node id
+            #print(source.DeviceType)
+            try:
+                # Keywords are in the string format and must be converted to float for numerical values
+                source_id = source.DeviceNumber        
+                #source_id = source.ID        
+                #voltage = locale.atof(cympy.study.QueryInfoDevice('CustLoadActualV', source_id, source.DeviceType))
+                voltage = locale.atof(cympy.study.QueryInfoNode('VBase', source_id))
+                
+                #print(source_id, source.DeviceType)
+                
+                df = pd.DataFrame([[network, source_id, voltage]], 
+                                  columns=['Network', 'Device', 'Voltage (V)'])
+                summary_report_full = pd.concat([summary_report_full, df])
+                #print(source.DeviceType)
+                
+            except ValueError as e:
+                pass  # Ignore source if no valid value if found
+    
+
+    
+      
+      
+        #lines.append([network, worst_A, worst_B, worst_C, overload_countA, overload_countB, overload_countC])
+   
+    #summary_report_full = summary_report_full[(summary_report_full > 0).any(axis=1)]
+    summary_report_full.to_csv(output_file_path, index=False)
+    
+    return
 
     
     return    
@@ -852,13 +910,24 @@ if __name__ == "__main__":
         if not all_line_loadings_folder:
             os.makedirs(all_line_loadings_folder)
             
+            
+        voltage_folder= PARENT_DIRECTORY + f"\\Co-Simulation-Results\\{date}\\Voltages\\"
+        if not voltage_folder:
+            os.makedirs(voltage_folder)
+            
+        summary_file=summary_folder + f"summary_X{hour}.csv"
+        summary_for_network(summary_file)
+            
         overload_file_network=overload_summary_folder + f"overload_summary_by_network_X{hour}.csv"
         overload_file_source=overload_summary_folder + f"overload_summary_by_source_X{hour}.csv"
         report_overloads_by_network_and_source(overload_file_network,overload_file_source)
         
         all_overloads_file = all_overloads_folder+f"all_overloads_X{hour}.csv"
         all_line_loading_file = all_overloads_folder+f"line_loading_X{hour}.csv"
-        report_all_overloads_and_line_loadings(all_overloads_file, )
+        report_all_overloads_and_line_loadings(all_overloads_file, all_line_loading_file)
+        
+        
+        report_all_voltages(voltage_folder + f"all_voltages_X{hour}.csv")
    
     index_counter=index_counter+1
     #time.sleep(470)
