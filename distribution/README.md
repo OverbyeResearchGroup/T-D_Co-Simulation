@@ -21,7 +21,7 @@
 
 ## Setup
 
-Use the conda environment from the root [`environment.yml`](../environment.yml), plus `pip install networkx dss-python OpenDSSDirect.py`. The scripts also need CYME with its Python API: copy an edited `cympy.pth` into the environment's `site-packages` so `import cympy` works (steps in the [root README](../README.md)). Both scripts also run `import _db`; that module is not in this repository or in `environment.yml`, so it must be importable in the same environment. Windows only (paths use backslashes).
+Use the conda environment from the root [`environment.yml`](../environment.yml), plus `pip install networkx dss-python OpenDSSDirect.py`. `power_world_setup.py` imports `esa`, which `environment.yml` does not include; install it only if you use that file. The scripts also need CYME with its Python API: copy an edited `cympy.pth` into the environment's `site-packages` so `import cympy` works (steps in the [root README](../README.md)). Both scripts also run `import _db`; that module is not in this repository or in `environment.yml`, so it must be importable in the same environment. Windows only (paths use backslashes).
 
 ## Running
 

@@ -85,7 +85,7 @@ The steps in the sections above still apply. These details were checked against 
 2. Install CYME with its Python API (`cympy`) for the distribution federate.
 3. Install PowerWorld Simulator with SimAuto for the transmission federate. The code drives it through the `SAW` class in `transmission/saw_editing_file.py`, which uses `pywin32`.
 4. Create the conda environment from the repository root in an Anaconda Prompt: `conda env create -f environment.yml`, then `conda activate cympyEnv`. `environment.yml` is a conda file (Python 3.12.7). The `python -m venv` example above does not read it.
-5. Install the packages the code imports that `environment.yml` does not list: `pip install networkx dss-python OpenDSSDirect.py`.
+5. Install the packages the code imports that `environment.yml` does not list: `pip install networkx dss-python OpenDSSDirect.py`. `distribution/power_world_setup.py` also imports `esa`, which is not listed either. No script imports that file, so `esa` is needed only if you use it.
 6. Edit `cympy.pth` so it holds your CYME folder (the example contains `C:\Program Files\CYME\CYME`), and copy it into `...\envs\cympyEnv\Lib\site-packages`. `distribution/main.py` and `distribution/cyme_functions.py` also run `import _db`. That module is not in this repository or in `environment.yml`, so it must be importable in the same environment.
 7. Put the model files the scripts expect in place (see Inputs and outputs), or edit the file names in the scripts.
 8. Edit the hard-coded paths: `EVfilepath` in `run_cosim.bat`, the distribution `exec` line in `run.json` (see Known issues), and `studyFilename` in `distribution/main.py` if your CYME study has another name.
@@ -143,6 +143,7 @@ Outputs, under `Co-Simulation-Results\` in the repository root:
 
 - `distribution/main.py`, once after hour 24, in `Co-Simulation-Results\May 3\`: `Summary\summary_X24.csv`, `Overload Summary\overload_summary_by_network_X24.csv`, `Overload Summary\overload_summary_by_source_X24.csv`, `Overloads\all_overloads_X24.csv`, `Overloads\line_loading_X24.csv`, `Voltages\all_voltages_X24.csv`. These are written only if the last received voltage string contains a comma. These folders must exist before the run.
 - `distribution/main.py` also writes `test.csv` (spot load kW and kvar totals, overwritten each hour) to the working directory.
+- `helics run` sends the printed output of each process to `distribution_system.log`, `transmission_system.log` and `broker.log` in the folder that holds `run.json` (the repository root).
 - `transmission/transmission_cost.py`, each hour, in `Co-Simulation-Results\Aug. 6\Weather_data_added\`: `OPF\opf_load_data_X<hour>.csv` (the load table after the distribution values are added; the folder is named OPF, but the active code solves a power flow), `log<hour>.txt` and `log_after<hour>.txt` (PowerWorld log), and `Generator_data\generator_data_hour_X<hour>.csv`. The script creates these folders. As committed, the run stops before these files are written (see Known issues).
 
 ## Known issues
@@ -157,17 +158,17 @@ Outputs, under `Co-Simulation-Results\` in the repository root:
 ## Related repositories
 
 - [EV-Research-Simulations](https://github.com/OverbyeResearchGroup/EV-Research-Simulations), folder `Full-Co-Simulation/`: same federate layout (`distribution_system/`, `helics_utils/`, `transmission/`, `run.json`). `transmission/saw_editing_file.py` here is identical to `Full-Co-Simulation/transmission/updated_esa_functions.py` there. `distribution/power_world_setup.py` is identical to `Full-Co-Simulation/distribution_system/power_world_setup.py`. `helics_utils/__init__.py` differs by one commented-out line. `transmission/transmission_cost.py` and `transmission/power_world_setup.py` are edited versions; for example, both import `SAW` from `saw_editing_file` instead of `esa`. That folder also holds the PowerWorld case, MW and MVAR time-series files and weather files named in `transmission_cost.py`.
-- [ESA](https://github.com/mzy2240/ESA) (the `esa` package on PyPI): `transmission/saw_editing_file.py` contains ESA's `SAW` class, and its docstrings link to that repository.
+- [ESA](https://github.com/mzy2240/ESA) (the `esa` package on PyPI): `transmission/saw_editing_file.py` contains ESA's `SAW` class, and its docstrings link to that repository. It matches `esa/saw.py` in the esa 1.3.5 wheel on PyPI except that the module docstring and the import of ESA's `initialize_bound` and `calculate_bound` helpers are removed.
 
 ## Contributors
 
-From the git history:
+From the git history (the 2026-09 commit that added these README sections is not counted):
 
 - Diana Wallison: 29 commits
 - Jonathan Snodgrass: 1 commit (initial commit)
 
 ## Status
 
-- First commit 2025-09-03; last commit 2025-12-17.
+- First commit 2025-09-03; last commit before this README update 2025-12-17.
 - `distribution/main.py` and `distribution/cyme_functions.py` were changed through 2025-12-17 and hold the most recent work.
 - `transmission/` was last changed on 2025-10-07 and `helics_utils/` on 2025-10-06. `run.json` dates from 2025-10-06, `run_cosim.bat` from 2025-10-07, and `environment.yml` and `cympy.pth` from 2025-10-20.
